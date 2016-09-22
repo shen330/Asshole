@@ -20,4 +20,4 @@ Step 2. Add the dependency
 	        compile 'com.github.shenwenjun:Asshole:v1.0'
 	}
 ```
-Share this release:
+
