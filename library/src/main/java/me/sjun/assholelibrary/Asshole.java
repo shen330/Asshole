@@ -3,6 +3,7 @@ package me.sjun.assholelibrary;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -105,7 +106,16 @@ public final class Asshole extends SimpleActivityLifecycleCallbacks {
         HoleContainer container = new HoleContainer(context);
         container.setId(R.id.asshole_container);
 
-        ProgressBar progressBar = new ProgressBar(context);
+        // 这里的目的是不使用 Material 的 ProgressBar Style , 因为 api 21 ~ 24 上 ProgressBar 默认的
+        // indeterminate drawable 实现有问题， 会强占 Main Looper 所处队列
+        ProgressBar progressBar;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            progressBar = new ProgressBar(context, null,
+                    0, // defStyleAttr = 0 时系统才会使用下一个参数
+                    android.R.style.Widget_Holo_ProgressBar);
+        } else {
+            progressBar = new ProgressBar(context);
+        }
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT
         );
