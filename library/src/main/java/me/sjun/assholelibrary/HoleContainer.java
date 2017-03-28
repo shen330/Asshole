@@ -15,6 +15,12 @@ import android.widget.FrameLayout;
  */
 public class HoleContainer extends FrameLayout {
 
+    public interface OnBackPressedListener {
+        boolean onBackPressed();
+    }
+
+    private OnBackPressedListener onBackPressedListener;
+
     public HoleContainer(Context context) {
         super(context);
         init();
@@ -36,6 +42,10 @@ public class HoleContainer extends FrameLayout {
         init();
     }
 
+    public void setOnBackPressedListener(OnBackPressedListener onBackPressedListener) {
+        this.onBackPressedListener = onBackPressedListener;
+    }
+
     private void init() {
         // 禁止点击屏幕其他区域
         setClickable(true);
@@ -49,7 +59,10 @@ public class HoleContainer extends FrameLayout {
 
     @Override
     public boolean onKeyPreIme(int keyCode, KeyEvent event) {
-        return keyCode == KeyEvent.KEYCODE_BACK;
+        if (keyCode == KeyEvent.KEYCODE_BACK && onBackPressedListener != null) {
+            return onBackPressedListener.onBackPressed();
+        }
+        return super.onKeyPreIme(keyCode, event);
     }
 
 }

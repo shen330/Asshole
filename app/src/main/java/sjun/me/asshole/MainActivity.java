@@ -26,4 +26,9 @@ public class MainActivity extends AppCompatActivity {
         startActivity(new Intent(this, SecondActivity.class));
     }
 
+    public void onSecondCancelable(View v) {
+        startActivity(new Intent(this, SecondActivity.class));
+        Asshole.showCancelable();
+    }
+
 }

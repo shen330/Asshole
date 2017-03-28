@@ -4,11 +4,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <EditText
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="asdfasdfanseklnfalsdnf;alsnel;fn;asdfasdf"
-        android:textColor="@android:color/holo_blue_bright"
-        android:textSize="50dp" />
+        android:hint="aaaaaaaaa" />
+
+    <Button
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_gravity="center"
+        android:text="touch me" />
 
 </FrameLayout>

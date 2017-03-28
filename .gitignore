@@ -1,12 +1,12 @@
 # Built application files
-*.apk
-*.ap_
+#*.apk
+#*.ap_
 
 # Files for the ART/Dalvik VM
-*.dex
+#*.dex
 
 # Java class files
-*.class
+#*.class
 
 # Generated files
 bin/
@@ -34,15 +34,10 @@ captures/
 
 # Intellij
 *.iml
-.idea/workspace.xml
+.idea/
 
 # Keystore files
 *.jks
 
 
-*.iml
-/local.properties
 .DS_Store
-/build
-
-/.idea

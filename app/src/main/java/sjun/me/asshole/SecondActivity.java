@@ -15,12 +15,14 @@ import me.sjun.assholelibrary.Asshole;
  */
 public class SecondActivity extends AppCompatActivity {
 
+    private Handler handler = new Handler();
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_second);
 
-        new Handler().postDelayed(new Runnable() {
+        handler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 Asshole.hide();
@@ -29,4 +31,9 @@ public class SecondActivity extends AppCompatActivity {
         }, 5000);
     }
 
+    @Override
+    protected void onDestroy() {
+        handler.removeCallbacksAndMessages(null);
+        super.onDestroy();
+    }
 }

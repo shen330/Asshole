@@ -27,25 +27,11 @@ public final class Asshole extends SimpleActivityLifecycleCallbacks {
 
     private boolean mShowing;
 
+    private boolean cancelable;
+
     private Handler mMainH;
 
     private WeakHashMap<Integer, Activity> map;
-
-    private final Runnable showRunnable = new Runnable() {
-        @Override
-        public void run() {
-            mShowing = true;
-            onStateChanged();
-        }
-    };
-
-    private final Runnable hideRunnable = new Runnable() {
-        @Override
-        public void run() {
-            mShowing = false;
-            onStateChanged();
-        }
-    };
 
     private Asshole() {
         map = new WeakHashMap<>();
@@ -60,8 +46,25 @@ public final class Asshole extends SimpleActivityLifecycleCallbacks {
         get().showInternal();
     }
 
+    public static void showCancelable() {
+        get().showCancelableInternal();
+    }
+
     public static void hide() {
         get().hideInternal();
+    }
+
+
+    private void showInternal() {
+        mMainH.post(showRunnable);
+    }
+
+    private void showCancelableInternal() {
+        mMainH.post(showCancelableRunnable);
+    }
+
+    private void hideInternal() {
+        mMainH.post(hideRunnable);
     }
 
     @Override
@@ -69,14 +72,6 @@ public final class Asshole extends SimpleActivityLifecycleCallbacks {
         super.onActivityResumed(activity);
         map.put(0, activity);
         onStateChanged();
-    }
-
-    private void showInternal() {
-        mMainH.post(showRunnable);
-    }
-
-    private void hideInternal() {
-        mMainH.post(hideRunnable);
     }
 
     private void onStateChanged() {
@@ -102,9 +97,10 @@ public final class Asshole extends SimpleActivityLifecycleCallbacks {
         }
     }
 
-    private static View create(Context context) {
+    private View create(Context context) {
         HoleContainer container = new HoleContainer(context);
         container.setId(R.id.asshole_container);
+        container.setOnBackPressedListener(onBackPressedListener);
 
         // 这里的目的是不使用 Material 的 ProgressBar Style , 因为 api 21 ~ 24 上 ProgressBar 默认的
         // indeterminate drawable 实现有问题， 会强占 Main Looper 所处队列
@@ -124,6 +120,43 @@ public final class Asshole extends SimpleActivityLifecycleCallbacks {
         container.addView(progressBar, lp);
         return container;
     }
+
+    private final HoleContainer.OnBackPressedListener onBackPressedListener = new HoleContainer.OnBackPressedListener() {
+        @Override
+        public boolean onBackPressed() {
+            if (cancelable) {
+                hideInternal();
+            }
+            return true;
+        }
+    };
+
+    private final Runnable showCancelableRunnable = new Runnable() {
+        @Override
+        public void run() {
+            mShowing = true;
+            cancelable = true;
+            onStateChanged();
+        }
+    };
+
+    private final Runnable showRunnable = new Runnable() {
+        @Override
+        public void run() {
+            mShowing = true;
+            cancelable = false;
+            onStateChanged();
+        }
+    };
+
+    private final Runnable hideRunnable = new Runnable() {
+        @Override
+        public void run() {
+            mShowing = false;
+            onStateChanged();
+        }
+    };
+
 
     private static Asshole get() {
         return InstanceHolder.INSTANCE;
