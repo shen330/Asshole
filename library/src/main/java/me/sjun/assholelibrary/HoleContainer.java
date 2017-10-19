@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.os.Build;
 import android.util.AttributeSet;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.widget.FrameLayout;
 
@@ -13,11 +14,7 @@ import android.widget.FrameLayout;
  * author shenwenjun
  * Date 9/21/16.
  */
-public class HoleContainer extends FrameLayout {
-
-    public interface OnBackPressedListener {
-        boolean onBackPressed();
-    }
+class HoleContainer extends FrameLayout {
 
     private OnBackPressedListener onBackPressedListener;
 
@@ -42,6 +39,13 @@ public class HoleContainer extends FrameLayout {
         init();
     }
 
+    @Override
+    protected LayoutParams generateDefaultLayoutParams() {
+        LayoutParams layoutParams = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+        layoutParams.gravity = Gravity.CENTER;
+        return layoutParams;
+    }
+
     public void setOnBackPressedListener(OnBackPressedListener onBackPressedListener) {
         this.onBackPressedListener = onBackPressedListener;
     }
@@ -62,7 +66,12 @@ public class HoleContainer extends FrameLayout {
         if (keyCode == KeyEvent.KEYCODE_BACK && onBackPressedListener != null) {
             return onBackPressedListener.onBackPressed();
         }
-        return super.onKeyPreIme(keyCode, event);
+        return true;
+    }
+
+    interface OnBackPressedListener {
+
+        boolean onBackPressed();
     }
 
 }

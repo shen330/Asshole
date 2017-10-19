@@ -2,7 +2,9 @@
     package="me.sjun.assholelibrary">
 
     <application>
-
+        <activity
+            android:theme="@style/Translucent"
+            android:name=".AssActivity"
+            android:launchMode="singleTop" />
     </application>
-
 </manifest>
