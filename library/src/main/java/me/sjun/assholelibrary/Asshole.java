@@ -2,167 +2,146 @@ package me.sjun.assholelibrary;
 
 import android.app.Activity;
 import android.app.Application;
-import android.content.Context;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
-import android.view.Gravity;
-import android.view.View;
+import android.os.Message;
+import android.support.annotation.MainThread;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
-import android.widget.ProgressBar;
-
-import java.util.WeakHashMap;
-
-import me.sjun.assholelibrary.util.SimpleActivityLifecycleCallbacks;
 
 /**
- * Sample
- * package co.nonda.sample
+ * Control AssView show/hide globally whit simple api.
  * author shenwenjun
  * Date 9/20/16.
  */
-public final class Asshole extends SimpleActivityLifecycleCallbacks {
+public final class Asshole {
 
+    private static final int WHAT_SHOW = 1002;
+    private static final int WHAT_SHOW_NEW_WINDOW = 1003;
+    private static final int WHAT_HIDE = 1004;
+
+    private final ActivityWatcher mActivityWatcher;
+    private final AssholeContainerManager mAssholeContainerManager;
+    private AssViewCreator mAssViewCreator;
     private boolean mShowing;
+    private boolean mShowInNewWindow;
 
-    private boolean cancelable;
-
-    private Handler mMainH;
-
-    private WeakHashMap<Integer, Activity> map;
+    private final Handler mMainHandler = new Handler(Looper.getMainLooper()) {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case WHAT_SHOW:
+                    performShowAss();
+                    break;
+                case WHAT_SHOW_NEW_WINDOW:
+                    performShowAssNewWindow();
+                    break;
+                case WHAT_HIDE:
+                    performHideAss();
+                    break;
+            }
+        }
+    };
 
     private Asshole() {
-        map = new WeakHashMap<>();
-        mMainH = new Handler(Looper.getMainLooper());
+        mActivityWatcher = new ActivityWatcher();
+        mAssholeContainerManager = new DefaultContainerManager();
+        mAssViewCreator = new DefaultAssViewCreator();
     }
-
-    public static void init(Application application) {
-        application.registerActivityLifecycleCallbacks(get());
-    }
-
-    public static void show() {
-        get().showInternal();
-    }
-
-    public static void showCancelable() {
-        get().showCancelableInternal();
-    }
-
-    public static void hide() {
-        get().hideInternal();
-    }
-
-
-    private void showInternal() {
-        mMainH.post(showRunnable);
-    }
-
-    private void showCancelableInternal() {
-        mMainH.post(showCancelableRunnable);
-    }
-
-    private void hideInternal() {
-        mMainH.post(hideRunnable);
-    }
-
-    @Override
-    public void onActivityResumed(Activity activity) {
-        super.onActivityResumed(activity);
-        map.put(0, activity);
-        onStateChanged();
-    }
-
-    private void onStateChanged() {
-        Activity activity = map.get(0);
-        if (activity == null) {
-            Log.w("Asshole", "onStateChanged called when activity is not ready ~");
-            return;
-        }
-        ViewGroup container = (ViewGroup) activity.getWindow().getDecorView();
-        View pb = activity.findViewById(R.id.asshole_container);
-
-        if (mShowing) {
-            if (pb != null) {
-                return;
-            }
-            pb = create(activity);
-            container.addView(pb);
-        } else {
-            if (pb == null) {
-                return;
-            }
-            container.removeView(pb);
-        }
-    }
-
-    private View create(Context context) {
-        HoleContainer container = new HoleContainer(context);
-        container.setId(R.id.asshole_container);
-        container.setOnBackPressedListener(onBackPressedListener);
-
-        // 这里的目的是不使用 Material 的 ProgressBar Style , 因为 api 21 ~ 24 上 ProgressBar 默认的
-        // indeterminate drawable 实现有问题， 会强占 Main Looper 所处队列
-        ProgressBar progressBar;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            progressBar = new ProgressBar(context, null,
-                    0, // defStyleAttr = 0 时系统才会使用下一个参数
-                    android.R.style.Widget_Holo_ProgressBar);
-        } else {
-            progressBar = new ProgressBar(context);
-        }
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT
-        );
-        lp.gravity = Gravity.CENTER;
-
-        container.addView(progressBar, lp);
-        return container;
-    }
-
-    private final HoleContainer.OnBackPressedListener onBackPressedListener = new HoleContainer.OnBackPressedListener() {
-        @Override
-        public boolean onBackPressed() {
-            if (cancelable) {
-                hideInternal();
-            }
-            return true;
-        }
-    };
-
-    private final Runnable showCancelableRunnable = new Runnable() {
-        @Override
-        public void run() {
-            mShowing = true;
-            cancelable = true;
-            onStateChanged();
-        }
-    };
-
-    private final Runnable showRunnable = new Runnable() {
-        @Override
-        public void run() {
-            mShowing = true;
-            cancelable = false;
-            onStateChanged();
-        }
-    };
-
-    private final Runnable hideRunnable = new Runnable() {
-        @Override
-        public void run() {
-            mShowing = false;
-            onStateChanged();
-        }
-    };
-
 
     private static Asshole get() {
         return InstanceHolder.INSTANCE;
     }
 
+    public static void init(Application application) {
+        application.registerActivityLifecycleCallbacks(get().mActivityWatcher);
+        get().initActivityWatcher();
+    }
+
+    public static void setAssViewCreator(@NonNull AssViewCreator assViewCreator) {
+        get().mAssViewCreator = assViewCreator;
+    }
+
+    public static void show() {
+        get().mMainHandler.sendEmptyMessage(WHAT_SHOW);
+    }
+
+    public static void showNewWindow() {
+        get().mMainHandler.sendEmptyMessage(WHAT_SHOW_NEW_WINDOW);
+    }
+
+    public static void hide() {
+        get().mMainHandler.sendEmptyMessage(WHAT_HIDE);
+    }
+
+    public static ViewGroup createAssView(Activity activity) {
+        return get().mAssholeContainerManager.create(activity, get().mAssViewCreator);
+    }
+
+
+    /* ================================================================= */
+    /* ========================      inner       ======================= */
+    /* ================================================================= */
+
+    private void initActivityWatcher() {
+        mActivityWatcher.setResumedListener(new ActivityWatcher.OnActivityResumedListener() {
+            @MainThread
+            @Override
+            public void onActivityResumed(@NonNull Activity activity) {
+                onStateChanged(activity);
+            }
+        });
+    }
+
+    @MainThread
+    private void performShowAss() {
+        mShowing = true;
+        mShowInNewWindow = false;
+        onStateChanged(mActivityWatcher.current());
+    }
+
+    @MainThread
+    private void performShowAssNewWindow() {
+        mShowing = true;
+        mShowInNewWindow = true;
+        Activity currentActivity = mActivityWatcher.current();
+        if (currentActivity == null) return;
+        AssActivity.show(currentActivity);
+    }
+
+    @MainThread
+    private void performHideAss() {
+        if (mShowInNewWindow) {
+            Activity currentActivity = mActivityWatcher.current();
+            if (currentActivity == null) return;
+            AssActivity.hide(currentActivity);
+        } else {
+            mShowing = false;
+            onStateChanged(mActivityWatcher.current());
+        }
+    }
+
+    @MainThread
+    private void onStateChanged(@Nullable Activity activity) {
+        if (mShowInNewWindow) return;
+
+        if (activity == null) return;
+        ViewGroup decorView = (ViewGroup) activity.getWindow().getDecorView();
+        ViewGroup assHolder = mAssholeContainerManager.find(activity);
+
+        if (mShowing) {
+            if (assHolder != null) return;
+            assHolder = mAssholeContainerManager.create(activity, mAssViewCreator);
+            decorView.addView(assHolder);
+        } else {
+            if (assHolder == null) return;
+            decorView.removeView(assHolder);
+        }
+    }
+
     private static final class InstanceHolder {
+
         private static volatile Asshole INSTANCE = new Asshole();
     }
 
